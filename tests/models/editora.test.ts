@@ -1,43 +1,46 @@
-import {Editora} from '../../src/models/editora';
 import { AppDataSource } from '../../src/db/dataSource';
+import { Editora } from '../../src/models/editora';
+import { resetarBanco, fecharBanco } from '../helpers/db';
 
 beforeAll(async () => {
-    await AppDataSource.initialize();
+  await resetarBanco();
 });
+
 afterAll(async () => {
-    await AppDataSource.destroy();
+  await fecharBanco();
 });
 
-// Testa o modelo editora
 describe('Testando model editora', () => {
-    const objetoEditora = {
-        nome: 'Vozes', 
-        cidade: 'Petrópolis',
-        email: 'contato@vozes.com.br',
-    };
-    test('Deve instanciar uma nova editora', () => {
+  const objetoEditora = {
+    nome: 'Vozes',
+    cidade: 'Petrópolis',
+    email: 'contato@vozes.com.br',
+  };
 
-        const editora = new Editora(objetoEditora);
-        expect(editora).toEqual(
-            expect.objectContaining(objetoEditora),
-        );
+  test('Deve instanciar uma nova editora', () => {
+    const editora = Object.assign(new Editora(), objetoEditora);
+
+    expect(editora).toEqual(
+      expect.objectContaining(objetoEditora),
+    );
+  });
+
+  test('Deve salvar editora no banco', async () => {
+    const dados = await AppDataSource.getRepository(Editora).save({
+      ...objetoEditora,
     });
 
-    let objId: number;
-    test('Deve salvar editora no db usando o then', () => {
-        const editora = new Editora(objetoEditora);
-        
-        return editora.save().then((obj) => {
-            objId = obj.id;
-            expect(obj.nome).toBe('Vozes')  
-        });
-    });
-    
-    test('Deve deletar registro a partir do id', async () => {
-        const editora = await Editora.delete(objId);
-        expect(editora.affected).toBe(1);
-    });
-    
-    test.todo('Deve salvar editora no db usando async e await'); 
-    test.todo('Deve fazer uma chamada simulada ao db');
-})
+    expect(dados.nome).toBe('Vozes');
+    expect(dados.id).toBeDefined();
+  });
+
+  test('Deve deletar registro a partir do id', async () => {
+    const repo = AppDataSource.getRepository(Editora);
+    const salvo = await repo.save({ ...objetoEditora });
+    const resultado = await repo.delete(salvo.id);
+
+    expect(resultado.affected).toBe(1);
+  });
+
+  test.todo('Deve fazer uma chamada simulada ao db');
+});
