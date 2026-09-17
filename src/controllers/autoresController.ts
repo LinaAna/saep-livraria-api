@@ -19,8 +19,16 @@ export async function mostrarAutor(req: Request, res: Response): Promise<void> {
 }
 
 export async function criarAutor(req: Request, res: Response): Promise<void> {
-  const dados = req.body as Partial<Autor>;
-  const autor = autores().create(dados);
+  const dados = (req.body ?? {}) as Partial<Autor>;
+  const nome = String(dados.nome ?? '').trim();
+  const nacionalidade = String(dados.nacionalidade ?? '').trim();
+
+  if (!nome || !nacionalidade) {
+    res.status(400).json({ erro: 'Campos obrigatórios ausentes' });
+    return;
+  }
+
+  const autor = autores().create({ ...dados, nome, nacionalidade });
   await autores().save(autor);
   res.status(201).json(autor);
 }
@@ -32,7 +40,14 @@ export async function atualizarAutor(req: Request, res: Response): Promise<void>
     res.status(404).json({ erro: 'Autor não encontrado' });
     return;
   }
-  repo.merge(autor, req.body as Partial<Autor>);
+
+  const dados = (req.body ?? {}) as Partial<Autor>;
+  if (Object.keys(dados).length === 0) {
+    res.status(400).json({ erro: 'Body vazio' });
+    return;
+  }
+
+  repo.merge(autor, dados);
   await repo.save(autor);
   res.json(autor);
 }
